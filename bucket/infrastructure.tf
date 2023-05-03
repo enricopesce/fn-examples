@@ -1,5 +1,18 @@
 provider "oci" {}
 
+locals {
+  fnroot    = abspath(path.root)
+  fnyaml    = "${abspath(path.root)}/func.yaml"
+  fncode    = "${abspath(path.root)}/func.py"
+  rawfndata = yamldecode(file(local.fnyaml))
+  fndata = {
+    name    = local.rawfndata.name
+    version = local.rawfndata.version
+    memory  = local.rawfndata.memory
+    image   = "${var.registry}/${local.rawfndata.name}:${local.rawfndata.version}"
+  }
+}
+
 resource "oci_objectstorage_bucket" "test_bucket" {
   compartment_id        = var.compartment_id
   name                  = var.bucket_name
@@ -41,7 +54,7 @@ resource "oci_core_default_route_table" "test_default_route_table" {
 
 resource "oci_functions_application" "test_application" {
   compartment_id = var.compartment_id
-  display_name   = "test_application"
+  display_name   = var.application_name
   subnet_ids     = [oci_core_subnet.test_public_subnet.id]
 }
 
@@ -59,16 +72,16 @@ resource "oci_events_rule" "test_rule" {
   is_enabled     = "true"
 }
 
+resource "null_resource" "deploy_function" {
+  triggers = {
+    fnfilechanged = "${sha1(file(local.fncode))}"
+  }
 
-locals {
-  fnroot    = abspath(path.root)
-  fnyaml    = "${abspath(path.root)}/func.yaml"
-  rawfndata = yamldecode(file(local.fnyaml))
-  fndata = {
-    name    = local.rawfndata.name
-    version = local.rawfndata.version
-    memory  = local.rawfndata.memory
-    image   = "${var.registry}/${local.rawfndata.name}:${local.rawfndata.version}"
+  provisioner "local-exec" {
+    working_dir = local.fnroot
+    command     = <<-EOC
+      fn deploy --app ${var.application_name}
+    EOC
   }
 }
 
@@ -101,7 +114,6 @@ resource "oci_logging_log" "test_fn_log" {
   }
   is_enabled = true
 }
-
 
 resource "oci_logging_log" "test_event_log" {
   display_name = "test_event_log"

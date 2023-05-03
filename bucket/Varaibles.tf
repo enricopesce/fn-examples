@@ -4,3 +4,4 @@ variable "region" {}
 variable "bucket_name" {}
 variable "bucket_namespace" {}
 variable "registry" {}
+variable "application_name" {}

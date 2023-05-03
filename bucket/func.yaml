@@ -1,6 +1,6 @@
 schema_version: 20180708
 name: bucket
-version: 0.0.3
+version: 0.0.4
 runtime: python
 build_image: fnproject/python:3.9-dev
 run_image: fnproject/python:3.9
