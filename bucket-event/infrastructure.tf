@@ -91,6 +91,10 @@ resource "oci_functions_function" "test_function" {
   display_name   = local.fndata.name
   image          = local.fndata.image
   memory_in_mbs  = local.fndata.memory
+  provisioned_concurrency_config {
+    strategy = "CONSTANT"
+    count    = 20
+  }
 }
 
 resource "oci_logging_log_group" "test_log_group" {
