@@ -9,7 +9,7 @@ docker login -u '<tenancy-namespace>/<user-name>' <region-key>.ocir.io
 ```
 
 ```console
-fn create app pythonexamples --annotation oracle.com/oci/subnetIds='[<sunbet-ocid>]'
+fn create app pythonexamples --annotation oracle.com/oci/subnetIds='["<sunbet-ocid>"]'
 ```
 
 ```console

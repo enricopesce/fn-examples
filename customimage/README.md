@@ -29,5 +29,10 @@ terraform apply
 Invoke the function
 ```console
 echo -n '{"name": "Oracle"}' | fn invoke custom_image customimage
+{"message": "Hello Oracle"}
 ```
 
+Destroy all
+```console
+terraform destroy
+```
