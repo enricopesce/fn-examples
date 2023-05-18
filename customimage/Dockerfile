@@ -6,8 +6,10 @@ RUN pip3 install --target /python/ --no-cache --no-cache-dir -r requirements.txt
     rm -fr ~/.cache/pip /tmp* requirements.txt func.yaml Dockerfile .venv &&\
     chmod -R o+r /python
 
-# RUN microdnf install <packages> &&\
-#     microdnf clean all
+# install Oracle database client
+RUN microdnf install oracle-instantclient-release-el8 &&\
+    microdnf install oracle-instantclient-basic &&\
+    microdnf clean all
 
 ADD . /function/
 
