@@ -1,5 +1,7 @@
 FROM fnproject/python:3.9
 
+WORKDIR /function
+
 RUN microdnf install oracle-instantclient-release-el8 &&\
     microdnf install oracle-instantclient-basic unzip &&\
     microdnf clean all
@@ -20,7 +22,5 @@ RUN chmod -R o+r /function
 ENV PYTHONPATH=/function:/python
 ENV PATH=/usr/lib/oracle/21/client64/bin:$PATH
 ENV TNS_ADMIN=/function/wallet
-
-WORKDIR /function
 
 ENTRYPOINT ["/python/bin/fdk", "/function/func.py", "handler"]

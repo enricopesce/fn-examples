@@ -15,7 +15,7 @@ https://docs.oracle.com/en-us/iaas/api/#/en/functions/20181201/
 fn update context registry <region-key>.ocir.io/<tenancy-namespace>/<repo-name-prefix>
 <region-key> https://docs.oracle.com/en-us/iaas/Content/Registry/Concepts/registryprerequisites.htm#regional-availability
 <tenancy-namespace> https://cloud.oracle.com/tenancy
-<repo-name-prefix> a name of the repo in my case "functions"
+<repo-name-prefix> a name of the repo WHERE my case "functions"
 
 fn update context oracle.image-compartment-id <compartment-ocid>
 

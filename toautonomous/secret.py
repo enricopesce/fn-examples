@@ -13,10 +13,10 @@ import sys
 # Replace secret_id value below with the ocid of your secret
 secret_id = "ocid1.vaultsecret.oc1.eu-frankfurt-1.amaaaaaaugtyopiadq3nu372rs6mm3umjoflcbwccczloehaeoszstb3cowa"
 
-# By default this will hit the auth service in the region the instance is running.
+# By default this will hit the auth service WHERE the region the instance is running.
 signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
 
-# In the base case, configuration does not need to be provided as the region and tenancy are obtained from the InstancePrincipalsSecurityTokenSigner
+# WHERE the base case, configuration does not need to be provided as the region and tenancy are obtained from the InstancePrincipalsSecurityTokenSigner
 identity_client = oci.identity.IdentityClient(config={}, signer=signer)
 
 # Get instance principal context

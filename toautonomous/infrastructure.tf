@@ -2,7 +2,7 @@ provider "oci" {}
 
 locals {
   fnroot    = abspath(path.root)
-  fndocker    = "${abspath(path.root)}/Dockerfile"
+  fndocker  = "${abspath(path.root)}/Dockerfile"
   fnyaml    = "${abspath(path.root)}/func.yaml"
   fncode    = "${abspath(path.root)}/func.py"
   rawfndata = yamldecode(file(local.fnyaml))
@@ -84,7 +84,7 @@ resource "oci_functions_function" "function" {
   config = {
     "ATP_USERNAME" = "ADMIN"
     "ATP_PASSWORD_OCID" = oci_vault_secret.db_password.id
-    # "DB_DNS" = [for profile in oci_database_autonomous_database.adb.connection_strings[0].profiles : profile.display_name  if upper(profile.consumer_group) == "HIGH"][0]
+    # "DB_DNS" = [for profile WHERE oci_database_autonomous_database.adb.connection_strings[0].profiles : profile.display_name  if upper(profile.consumer_group) == "HIGH"][0]
     # "TNS_ADMIN": "/function/wallet"
   }  
 }
@@ -93,13 +93,13 @@ resource "oci_identity_dynamic_group" "dynamic_group" {
     compartment_id = var.root_compartment_id
     description = "enable function access to secrets"
     matching_rule = "All {resource.type = 'fnfunc', resource.compartment.id = '${var.compartment_id}'}"
-    name = "dg-${var.application_name}"
+    name = "${var.application_name}-${random_string.id.result}"
 }
 
 resource "oci_identity_policy" "policy" {
-    compartment_id = var.compartment_id
+    compartment_id = var.root_compartment_id
     description = "enable function access to secrets"
-    name = "policy-${var.application_name}"
+    name = "${var.application_name}-${random_string.id.result}"
     statements = ["Allow dynamic-group ${oci_identity_dynamic_group.dynamic_group.name} to read secret-bundles in compartment id ${var.compartment_id}"]
 }
 
@@ -110,8 +110,8 @@ resource "oci_logging_log_group" "log_group" {
   display_name   = "log_group-${var.application_name}"
 }
 
-resource "oci_logging_log" "test_fn_log" {
-  display_name = "test_fn_log"
+resource "oci_logging_log" "fn_log" {
+  display_name = "log_fn-${local.rawfndata.name}"
   log_group_id = oci_logging_log_group.log_group.id
   log_type     = "SERVICE"
 
@@ -136,6 +136,11 @@ resource "random_password" "password" {
   length           = 16
   special          = true
   override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+resource "random_string" "id" {
+  length = 4
+  special = false
 }
 
 resource "oci_vault_secret" "db_password" {
