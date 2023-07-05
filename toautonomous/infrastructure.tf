@@ -5,6 +5,7 @@ locals {
   fndocker  = "${abspath(path.root)}/Dockerfile"
   fnyaml    = "${abspath(path.root)}/func.yaml"
   fncode    = "${abspath(path.root)}/func.py"
+  fnrequirements    = "${abspath(path.root)}/requirements.txt"
   rawfndata = yamldecode(file(local.fnyaml))
   fndata = {
     name    = local.rawfndata.name
@@ -58,17 +59,19 @@ resource "oci_functions_application" "application" {
 
 resource "null_resource" "deploy_function" {
   triggers = {
+    # fnyaml = "${sha1(file(local.fnyaml))}"
     fnfilechanged = "${sha1(file(local.fncode))}"
+    fnrequirementschanged = "${sha1(file(local.fnrequirements))}"
     dockerfilechanged = "${sha1(file(local.fndocker))}"
   }
 
   provisioner "local-exec" {
     working_dir = local.fnroot
     command     = <<-EOC
-      fn --verbose build
-      fn --verbose push
+      fn deploy --app ${var.application_name}
     EOC
   }
+
 }
 
 resource "oci_functions_function" "function" {
@@ -77,15 +80,11 @@ resource "oci_functions_function" "function" {
   display_name   = local.fndata.name
   image          = local.fndata.image
   memory_in_mbs  = local.fndata.memory
-  provisioned_concurrency_config {
-    strategy = "CONSTANT"
-    count    = 20
-  }
   config = {
     "ATP_USERNAME" = "ADMIN"
     "ATP_PASSWORD_OCID" = oci_vault_secret.db_password.id
-    # "DB_DNS" = [for profile WHERE oci_database_autonomous_database.adb.connection_strings[0].profiles : profile.display_name  if upper(profile.consumer_group) == "HIGH"][0]
-    # "TNS_ADMIN": "/function/wallet"
+    "DB_DNS" = [for profile in oci_database_autonomous_database.adb.connection_strings[0].profiles : profile.display_name if upper(profile.consumer_group) == "HIGH"][0]
+    "TNS_ADMIN": "/function/wallet"
   }  
 }
 
@@ -158,42 +157,42 @@ data "oci_secrets_secretbundle" "bundle" {
   secret_id = oci_vault_secret.db_password.id
 }
 
-###################################################################################################
+##################################################################################################
 
-# resource "oci_database_autonomous_database" "adb" {
-#   compartment_id              = var.compartment_id
-#   db_name                     = "DEMO"
-#   admin_password              = base64decode(data.oci_secrets_secretbundle.bundle.secret_bundle_content.0.content)
-#   data_storage_size_in_tbs    = 1
-#   db_version                  = "21c"
-#   db_workload                 = "OLTP"
-#   display_name                = "db-${var.application_name}"
-#   is_free_tier                = true
-#   is_mtls_connection_required = true
-#   ocpu_count                  = 1
-# }
+resource "oci_database_autonomous_database" "adb" {
+  compartment_id              = var.compartment_id
+  db_name                     = "DEMO"
+  admin_password              = base64decode(data.oci_secrets_secretbundle.bundle.secret_bundle_content.0.content)
+  data_storage_size_in_tbs    = 1
+  db_version                  = "21c"
+  db_workload                 = "OLTP"
+  display_name                = "db-${var.application_name}"
+  is_free_tier                = true
+  is_mtls_connection_required = true
+  ocpu_count                  = 1
+}
 
-# resource "oci_database_autonomous_database_wallet" "adb_wallet" {
-#   autonomous_database_id = oci_database_autonomous_database.adb.id
-#   password               = base64decode(data.oci_secrets_secretbundle.bundle.secret_bundle_content.0.content)
-#   base64_encode_content  = "true"
-# }
+resource "oci_database_autonomous_database_wallet" "adb_wallet" {
+  autonomous_database_id = oci_database_autonomous_database.adb.id
+  password               = base64decode(data.oci_secrets_secretbundle.bundle.secret_bundle_content.0.content)
+  base64_encode_content  = "true"
+}
 
-# resource "local_file" "autonomous_database_wallet_file" {
-#   content_base64 = oci_database_autonomous_database_wallet.adb_wallet.content
-#   filename       = "${path.module}/wallet.zip"
-# }
+resource "local_file" "autonomous_database_wallet_file" {
+  content_base64 = oci_database_autonomous_database_wallet.adb_wallet.content
+  filename       = "${path.module}/wallet.zip"
+}
 
-###################################################################################################
+##################################################################################################
 
-# output "database_autonomous_database_wallet_autonomous_database_id" {
-#   value = oci_database_autonomous_database_wallet.adb_wallet.autonomous_database_id
-# }
+output "database_autonomous_database_wallet_autonomous_database_id" {
+  value = oci_database_autonomous_database_wallet.adb_wallet.autonomous_database_id
+}
 
-# output "database_autonomous_database_wallet_id" {
-#   value = oci_database_autonomous_database_wallet.adb_wallet.id
-# }
+output "database_autonomous_database_wallet_id" {
+  value = oci_database_autonomous_database_wallet.adb_wallet.id
+}
 
-# output "password_id" {
-#   value = oci_vault_secret.db_password.secret_name
-# }
+output "password_id" {
+  value = oci_vault_secret.db_password.secret_name
+}

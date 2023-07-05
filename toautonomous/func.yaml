@@ -1,5 +1,5 @@
 schema_version: 20180708
 name: toautonomous
-version: 0.0.1
+version: 0.1.7
 runtime: docker
 memory: 256

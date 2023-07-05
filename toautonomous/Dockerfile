@@ -12,12 +12,14 @@ RUN pip3 install --target /python/ --no-cache --no-cache-dir -r requirements.txt
     rm -fr ~/.cache/pip /tmp* requirements.txt .venv &&\
     chmod -R o+r /python
 
-ADD . /function/
+ADD func.py /function/
+ADD wallet.zip /function/
 
 RUN chmod -R o+r /function
 
-# RUN unzip wallet.zip -d /function/wallet
-# RUN sed -i 's/\?\/network\/admin/\/function\/wallet/g' /function/wallet/sqlnet.ora
+RUN unzip wallet.zip -d /function/wallet
+RUN sed -i 's/\?\/network\/admin/\/function\/wallet/g' /function/wallet/sqlnet.ora &&\
+    rm wallet.zip
 
 ENV PYTHONPATH=/function:/python
 ENV PATH=/usr/lib/oracle/21/client64/bin:$PATH
