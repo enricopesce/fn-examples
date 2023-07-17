@@ -2,38 +2,48 @@ import io
 import oci
 import base64
 import logging
+import oracledb
 from fdk import response
-
 
 def get_text_secret(secret_ocid):
     signer = oci.auth.signers.get_resource_principals_signer()
     client = oci.secrets.SecretsClient({}, signer=signer)
     secret_content = client.get_secret_bundle(secret_ocid).data.secret_bundle_content.content.encode('utf-8')
     decrypted_secret_content = base64.b64decode(secret_content).decode("utf-8")
-    return {"secret content": decrypted_secret_content}
+    return decrypted_secret_content
+
+
+def query(ATP_USERNAME, DB_DNS, TNS_ADMIN, ATP_PASSWORD):
+    logging.getLogger().info("ATP_USERNAME = " + ATP_USERNAME)
+    logging.getLogger().info("DB_DNS = " + DB_DNS)
+    logging.getLogger().info("TNS_ADMIN = " + TNS_ADMIN)
+    logging.getLogger().info("ATP_PASSWORD = " + ATP_PASSWORD)
+
+    oracledb.defaults.config_dir = TNS_ADMIN
+    oracledb.init_oracle_client()
+
+    connection = oracledb.connect(user=ATP_USERNAME,
+        password=ATP_PASSWORD,
+        dsn=DB_DNS,
+        config_dir=TNS_ADMIN,
+        wallet_location=TNS_ADMIN,
+        wallet_password=ATP_PASSWORD)
+    
+    print(connection.version)
+    return "connected"
 
 
 def handler(ctx, data: io.BytesIO=None):
-    logging.getLogger().info("function start")
-
     try:
         cfg = dict(ctx.Config())
-        secret_ocid = cfg["ATP_PASSWORD_OCID"]
-        logging.getLogger().info("Secret ocid = " + secret_ocid)
+        ATP_PASSWORD = get_text_secret(cfg["ATP_PASSWORD_OCID"])
+        result = query(cfg["ATP_USERNAME"], cfg["DB_DNS"], cfg["TNS_ADMIN"], ATP_PASSWORD)
     except Exception as e:
         print('ERROR: Missing configuration keys, secret ocid and secret_type', e, flush=True)
         raise
         
-    try:        
-        resp = get_text_secret(secret_ocid)
-    except Exception as ex:
-        print("ERROR: failed to retrieve the secret content", ex, flush=True)
-        raise
-    
-    logging.getLogger().info("function end")
-    
     return response.Response(
         ctx, 
-        response_data=resp,
+        response_data=result,
         headers={"Content-Type": "application/json"}
     )

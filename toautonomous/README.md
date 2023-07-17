@@ -27,3 +27,9 @@ docker login -u '<tenancy-namespace>/<username>' <region-key>.ocir.io
 ```console
 terraform apply
 ```
+
+local dev
+
+fn start --log-level debug
+fn use context default
+fn deploy --verbose --app toautonomous --local
