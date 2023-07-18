@@ -12,7 +12,7 @@ RUN pip3 install --target /python/ --no-cache --no-cache-dir -r requirements.txt
     rm -fr ~/.cache/pip /tmp* requirements.txt .venv &&\
     chmod -R o+r /python
 
-ADD dev.py func.py /function/
+ADD func.py /function/
 ADD wallet.zip /function/
 
 RUN chmod -R o+r /function
