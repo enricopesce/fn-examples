@@ -33,3 +33,15 @@ local dev
 fn start --log-level debug
 fn use context default
 fn deploy --verbose --app toautonomous --local
+
+oci os object bulk-delete -bn processed-bucket --parallel-operations-count 2
+
+select JSON_VALUE(SENSORS.JSON_DOCUMENT, '$.id' returning NUMBER) as id,
+       JSON_VALUE(SENSORS.JSON_DOCUMENT, '$.wind' returning NUMBER) as wind,
+       JSON_VALUE(SENSORS.JSON_DOCUMENT, '$.temperature' returning NUMBER) as temperature,
+       JSON_VALUE(SENSORS.JSON_DOCUMENT, '$.humidity' returning NUMBER) as humidity,
+       JSON_VALUE(SENSORS.JSON_DOCUMENT, '$.date' returning TIMESTAMP) as time
+from SENSORS
+
+
+DELETE FROM SENSORS

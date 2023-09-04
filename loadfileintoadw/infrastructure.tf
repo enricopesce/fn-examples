@@ -130,7 +130,8 @@ resource "null_resource" "deploy_function" {
   provisioner "local-exec" {
     working_dir = local.fnroot
     command     = <<-EOC
-      fn deploy --verbose --app ${var.application_name}
+      fn build
+      fn push
     EOC
   }
 }
@@ -156,6 +157,10 @@ resource "oci_functions_function" "function" {
     "DB_DNS"            = [for profile in oci_database_autonomous_database.adb.connection_strings[0].profiles : profile.display_name if upper(profile.consumer_group) == "HIGH"][0]
     "TNS_ADMIN" : "/function/wallet"
   }
+  provisioned_concurrency_config {
+    strategy = "CONSTANT"
+    count    = 20
+  }  
 }
 
 resource "oci_identity_dynamic_group" "dynamic_group" {

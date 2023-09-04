@@ -24,10 +24,10 @@ def store_data(source_bucket, objectName, nameSpace, cfg):
     TNS_ADMIN = cfg["TNS_ADMIN"]
     ATP_PASSWORD = get_text_secret(cfg["ATP_PASSWORD_OCID"])
 
-    logging.getLogger().info("ATP_USERNAME = " + ATP_USERNAME)
-    logging.getLogger().info("DB_DNS = " + DB_DNS)
-    logging.getLogger().info("TNS_ADMIN = " + TNS_ADMIN)
-    logging.getLogger().info("ATP_PASSWORD = " + ATP_PASSWORD)
+    logging.getLogger().debug("ATP_USERNAME = " + ATP_USERNAME)
+    logging.getLogger().debug("DB_DNS = " + DB_DNS)
+    logging.getLogger().debug("TNS_ADMIN = " + TNS_ADMIN)
+    logging.getLogger().debug("ATP_PASSWORD = " + ATP_PASSWORD)
 
     oracledb.defaults.config_dir = TNS_ADMIN
     oracledb.init_oracle_client()
@@ -41,19 +41,19 @@ def store_data(source_bucket, objectName, nameSpace, cfg):
     
     connection.autocommit = True
 
-    logging.getLogger().info(connection.version)
+    logging.getLogger().debug(connection.version)
     soda = connection.getSodaDatabase()
-    collection = soda.createCollection("CUSTOMERS")
+    collection = soda.createCollection("SENSORS")
 
-    logging.getLogger().info("Searching for: " + nameSpace +
+    logging.getLogger().debug("Searching for: " + nameSpace +
                                 "/" + source_bucket + "/" + objectName)
     object = client.get_object(nameSpace, source_bucket, objectName)
     if object.status == 200:
         input_csv_text = str(object.data.text)
         reader = csv.DictReader(input_csv_text.split('\n'), delimiter=',')
         for row in reader:
-            logging.getLogger().info("INFO - inserting:")
-            logging.getLogger().info("INFO - " + json.dumps(row))
+            logging.getLogger().debug("INFO - inserting:")
+            logging.getLogger().debug("INFO - " + json.dumps(row))
             collection.insertOne(json.dumps(row))
 
 
@@ -82,19 +82,19 @@ def move_object(source_bucket, destination_bucket, object_name, namespace):
 
 
 def handler(ctx, data: io.BytesIO=None):
+    logging.basicConfig(level=logging.WARNING)
     cfg = dict(ctx.Config())
     try:
         destination_bucket = "processed-bucket"
         body = json.loads(data.getvalue())
-        logging.getLogger().info('body: ' + str(body))
+        logging.getLogger().debug('body: ' + str(body))
         source_bucket = body["data"]["additionalDetails"]["bucketName"]
         nameSpace = body["data"]["additionalDetails"]["namespace"]
         objectName = body["data"]["resourceName"]
-        #destination_bucket = cfg["destination_bucket"]
         store_data(source_bucket, objectName, nameSpace, cfg)
         move_object(source_bucket, destination_bucket, objectName, nameSpace)
     except (Exception, ValueError) as ex:
-        logging.getLogger().info('error parsing json payload: ' + str(ex))
+        logging.getLogger().debug('error parsing json payload: ' + str(ex))
 
     return response.Response(
         ctx, 
