@@ -7,6 +7,12 @@ locals {
   fncode         = "${abspath(path.root)}/func.py"
   fnrequirements = "${abspath(path.root)}/requirements.txt"
   rawfndata      = yamldecode(file(local.fnyaml))
+  fndata = {
+    name    = local.rawfndata.name
+    version = local.rawfndata.version
+    memory  = local.rawfndata.memory
+    image   = "${var.registry}/${local.rawfndata.name}:${local.rawfndata.version}"
+  }
 }
 
 ###################################################################################################
@@ -121,10 +127,7 @@ resource "oci_functions_application" "application" {
 resource "null_resource" "deploy_function" {
   depends_on = [oci_functions_application.application, local_file.autonomous_database_wallet_file]
   triggers = {
-    fnyaml                = "${sha1(file(local.fnyaml))}"
-    fnfilechanged         = "${sha1(file(local.fncode))}"
-    fnrequirementschanged = "${sha1(file(local.fnrequirements))}"
-    dockerfilechanged     = "${sha1(file(local.fndocker))}"
+    fnimage = local.fndata.image
   }
 
   provisioner "local-exec" {
@@ -136,17 +139,8 @@ resource "null_resource" "deploy_function" {
   }
 }
 
-locals {
-  fndata = {
-    name    = local.rawfndata.name
-    version = local.rawfndata.version
-    memory  = local.rawfndata.memory
-    image   = "${var.registry}/${local.rawfndata.name}:${local.rawfndata.version}"
-  }
-}
-
 resource "oci_functions_function" "function" {
-  depends_on     = [oci_database_autonomous_database.adb]
+  depends_on     = [oci_database_autonomous_database.adb, null_resource.deploy_function]
   application_id = oci_functions_application.application.id
   display_name   = local.fndata.name
   image          = local.fndata.image

@@ -20,7 +20,6 @@ z = 0
 while True:
     for x in range(int(rand.integers(low=1, high=10))):
         date = (datetime.datetime.utcnow() - datetime.timedelta(days=z))
-        print(date.isoformat())
         df = pd.DataFrame({
             'id': rand.integers(low=1, high=10, size=nrows),
             'wind': rand.integers(low=0, high=50, size=nrows),

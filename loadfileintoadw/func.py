@@ -55,6 +55,8 @@ def store_data(source_bucket, objectName, nameSpace, cfg):
             logging.getLogger().debug("INFO - inserting:")
             logging.getLogger().debug("INFO - " + json.dumps(row))
             collection.insertOne(json.dumps(row))
+    else:
+        raise Exception("cannot use object {0} from bucket {1}".format(objectName, source_bucket))
 
 
 def move_object(source_bucket, destination_bucket, object_name, namespace):
@@ -78,11 +80,11 @@ def move_object(source_bucket, destination_bucket, object_name, namespace):
         raise Exception("cannot copy object {0} to bucket {1}".format(object_name,destination_bucket))
     else:
         resp = objstore.delete_object(namespace, source_bucket, object_name)
-        print("INFO - Object {0} moved to Bucket {1}".format(object_name,destination_bucket), flush=True)
+        logging.getLogger().debug("INFO - Object {0} moved to Bucket {1}".format(object_name, destination_bucket))
 
 
 def handler(ctx, data: io.BytesIO=None):
-    logging.basicConfig(level=logging.WARNING)
+    logging.getLogger().setLevel(logging.ERROR)
     cfg = dict(ctx.Config())
     try:
         destination_bucket = "processed-bucket"
@@ -101,4 +103,3 @@ def handler(ctx, data: io.BytesIO=None):
         response_data="",
         headers={"Content-Type": "application/json"}
     )
-

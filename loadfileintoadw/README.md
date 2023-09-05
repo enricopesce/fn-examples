@@ -24,24 +24,39 @@ cat ~/.fn/contexts/oci.yaml
 docker login -u '<tenancy-namespace>/<username>' <region-key>.ocir.io
 
 
+Deploy the infrastructure
+
+to push a new function relese edit manually the func.yaml file and set or increment the version then
+
 ```console
-terraform apply
+terraform plan -out release
+terraform apply "release"
 ```
 
-local dev
 
+local dev
+```console
 fn start --log-level debug
 fn use context default
 fn deploy --verbose --app toautonomous --local
+```
 
+Cleaning buckets
+
+```console
 oci os object bulk-delete -bn processed-bucket --parallel-operations-count 2
+```
 
+Query ingested data on autonomous serverless
+
+```sql
 select JSON_VALUE(SENSORS.JSON_DOCUMENT, '$.id' returning NUMBER) as id,
        JSON_VALUE(SENSORS.JSON_DOCUMENT, '$.wind' returning NUMBER) as wind,
        JSON_VALUE(SENSORS.JSON_DOCUMENT, '$.temperature' returning NUMBER) as temperature,
        JSON_VALUE(SENSORS.JSON_DOCUMENT, '$.humidity' returning NUMBER) as humidity,
        JSON_VALUE(SENSORS.JSON_DOCUMENT, '$.date' returning TIMESTAMP) as time
 from SENSORS
+```
 
 
 DELETE FROM SENSORS
