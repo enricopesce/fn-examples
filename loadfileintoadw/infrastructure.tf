@@ -151,24 +151,22 @@ resource "oci_functions_function" "function" {
     "DB_DNS"            = [for profile in oci_database_autonomous_database.adb.connection_strings[0].profiles : profile.display_name if upper(profile.consumer_group) == "HIGH"][0]
     "TNS_ADMIN" : "/function/wallet"
   }
-  provisioned_concurrency_config {
-    strategy = "CONSTANT"
-    count    = 20
-  }  
 }
 
 resource "oci_identity_dynamic_group" "dynamic_group" {
   compartment_id = var.root_compartment_id
-  description    = "enable function access to secrets"
+  description    = "enable function access to compartment"
   matching_rule  = "All {resource.type = 'fnfunc', resource.compartment.id = '${var.compartment_id}'}"
   name           = "${var.application_name}-${random_string.id.result}"
 }
 
 resource "oci_identity_policy" "policy" {
   compartment_id = var.root_compartment_id
-  description    = "enable function access to secrets"
+  description    = "enable function access to oci services"
   name           = "${var.application_name}-${random_string.id.result}"
-  statements     = ["Allow dynamic-group ${oci_identity_dynamic_group.dynamic_group.name} to read secret-bundles in compartment id ${var.compartment_id}"]
+  statements     = ["Allow dynamic-group ${oci_identity_dynamic_group.dynamic_group.name} to read secret-bundles in compartment id ${var.compartment_id}",
+                    "Allow service faas to use apm-domains in compartment id ${var.compartment_id}"
+                    ]
 }
 
 ###################################################################################################

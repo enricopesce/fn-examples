@@ -40,4 +40,4 @@ while True:
                 print(put_object_response.headers)
                 os.remove(dir_path + path.name)
     z = z+1
-    sleep(5)
+    sleep(10)

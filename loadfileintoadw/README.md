@@ -33,14 +33,6 @@ terraform plan -out release
 terraform apply "release"
 ```
 
-
-local dev
-```console
-fn start --log-level debug
-fn use context default
-fn deploy --verbose --app toautonomous --local
-```
-
 Cleaning buckets
 
 ```console
@@ -57,6 +49,3 @@ select JSON_VALUE(SENSORS.JSON_DOCUMENT, '$.id' returning NUMBER) as id,
        JSON_VALUE(SENSORS.JSON_DOCUMENT, '$.date' returning TIMESTAMP) as time
 from SENSORS
 ```
-
-
-DELETE FROM SENSORS
