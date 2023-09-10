@@ -1,45 +1,41 @@
-To create the infrastructure you need to install terraform and create the terraform.tfvars file with the required variables defined on Variables.tf
+Per creare l'infrastruttura devi precendentemente installare terraform e creare il file terraform.tfvars con tutte le variabilil definite in Variables.tf
+
+Configurare OCI cli
+
+https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/cliconfigure.htm
+
+Configurare fn
+
+https://docs.oracle.com/en-us/iaas/Content/Functions/Tasks/functionsquickstartlocalhost.htm#functionsquickstartlocalhost
 
 https://docs.oracle.com/en-us/iaas/Content/Functions/Tasks/functionscreatefncontext.htm
 
-fn create context oci --provider oracle
-fn use context oci
-
-https://cloud.oracle.com/identity/compartments
+```console
+fn create context <my-context> --provider oracle
+fn use context <my-context>
+fn update context oracle.profile <profile-name>
 fn update context oracle.compartment-id <compartment-ocid>
-
 fn update context api-url <api-endpoint>
-fn update context api-url https://functions.eu-frankfurt-1.oci.oraclecloud.com
-https://docs.oracle.com/en-us/iaas/api/#/en/functions/20181201/
-
 fn update context registry <region-key>.ocir.io/<tenancy-namespace>/<repo-name-prefix>
-<region-key> https://docs.oracle.com/en-us/iaas/Content/Registry/Concepts/registryprerequisites.htm#regional-availability
-<tenancy-namespace> https://cloud.oracle.com/tenancy
-<repo-name-prefix> a name of the repo WHERE my case "functions"
+docker login -u '<tenancy-namespace>/<user-name>' <region-key>.ocir.io
+```
 
-fn update context oracle.image-compartment-id <compartment-ocid>
-
-cat ~/.fn/contexts/oci.yaml
-
-docker login -u '<tenancy-namespace>/<username>' <region-key>.ocir.io
-
-
-Deploy the infrastructure
-
-to push a new function relese edit manually the func.yaml file and set or increment the version then
+Per creare l'infrastruttura e creare un deployment in automatico della function:
 
 ```console
 terraform plan -out release
 terraform apply "release"
 ```
 
-Cleaning buckets
+Comandi di utilita'
+
+Svuotare un bucket
 
 ```console
-oci os object bulk-delete -bn processed-bucket --parallel-operations-count 2
+oci os object bulk-delete -bn processed-bucket --parallel-operations-count 10
 ```
 
-Query ingested data on autonomous serverless
+Visualizzare i dati salvati su autonomous
 
 ```sql
 select JSON_VALUE(SENSORS.JSON_DOCUMENT, '$.id' returning NUMBER) as id,
