@@ -1,3 +1,6 @@
+
+![Screenshot](architecture.png)
+
 Per creare l'infrastruttura devi precendentemente installare terraform e creare il file terraform.tfvars con tutte le variabilil definite in Variables.tf
 
 Configurare OCI cli
