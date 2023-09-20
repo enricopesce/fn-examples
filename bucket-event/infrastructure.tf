@@ -1,10 +1,12 @@
 provider "oci" {}
 
 locals {
-  fnroot    = abspath(path.root)
-  fnyaml    = "${abspath(path.root)}/func.yaml"
-  fncode    = "${abspath(path.root)}/func.py"
-  rawfndata = yamldecode(file(local.fnyaml))
+  fnroot         = abspath(path.root)
+  fndocker       = "${abspath(path.root)}/Dockerfile"
+  fnyaml         = "${abspath(path.root)}/func.yaml"
+  fncode         = "${abspath(path.root)}/func.py"
+  fnrequirements = "${abspath(path.root)}/requirements.txt"
+  rawfndata      = yamldecode(file(local.fnyaml))
   fndata = {
     name    = local.rawfndata.name
     version = local.rawfndata.version
@@ -73,14 +75,16 @@ resource "oci_events_rule" "test_rule" {
 }
 
 resource "null_resource" "deploy_function" {
+  depends_on = [oci_functions_application.application]
   triggers = {
-    fnfilechanged = "${sha1(file(local.fncode))}"
+    fnimage = local.fndata.image
   }
 
   provisioner "local-exec" {
     working_dir = local.fnroot
     command     = <<-EOC
-      fn deploy --app ${var.application_name}
+      fn build
+      fn push
     EOC
   }
 }
@@ -91,10 +95,6 @@ resource "oci_functions_function" "test_function" {
   display_name   = local.fndata.name
   image          = local.fndata.image
   memory_in_mbs  = local.fndata.memory
-  provisioned_concurrency_config {
-    strategy = "CONSTANT"
-    count    = 20
-  }
 }
 
 resource "oci_logging_log_group" "test_log_group" {
