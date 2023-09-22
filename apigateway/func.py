@@ -9,6 +9,7 @@ import io
 import json
 import oci
 import logging
+import uvloop #IO operation at least 4 times faster 
 from urllib.parse import urlparse, parse_qs
 
 from fdk import response
@@ -28,14 +29,6 @@ def handler(ctx, data: io.BytesIO=None):
     resp["Configuration"] = dict(ctx.Config())
     logging.getLogger().info("Configuration: " + json.dumps(resp["Configuration"]))
 
-    # retrieving the request body, e.g. {"key1":"value"}
-    #requestbody_bytes = data.getvalue()
-    #if requestbody_bytes==b'':
-    #    logging.getLogger().info("No request body")
-    #    requestbody = {}
-    #else:
-    #    requestbody = json.loads(requestbody_bytes)
-    #    logging.getLogger().info()
     try:
         requestbody_str = data.getvalue().decode('UTF-8')
         if requestbody_str:

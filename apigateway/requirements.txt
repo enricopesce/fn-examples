@@ -1,3 +1,4 @@
 fdk
 oci
 oracledb
+uvloop
