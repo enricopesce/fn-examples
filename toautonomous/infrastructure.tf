@@ -7,6 +7,12 @@ locals {
   fncode         = "${abspath(path.root)}/func.py"
   fnrequirements = "${abspath(path.root)}/requirements.txt"
   rawfndata      = yamldecode(file(local.fnyaml))
+  fndata = {
+    name    = local.rawfndata.name
+    version = local.rawfndata.version
+    memory  = local.rawfndata.memory
+    image   = "${var.registry}/${local.rawfndata.name}:${local.rawfndata.version}"
+  }
 }
 
 ###################################################################################################
@@ -92,31 +98,20 @@ resource "oci_functions_application" "application" {
 resource "null_resource" "deploy_function" {
   depends_on = [oci_functions_application.application, local_file.autonomous_database_wallet_file]
   triggers = {
-    fnyaml                = "${sha1(file(local.fnyaml))}"
-    fnfilechanged         = "${sha1(file(local.fncode))}"
-    fnrequirementschanged = "${sha1(file(local.fnrequirements))}"
-    dockerfilechanged     = "${sha1(file(local.fndocker))}"
+    fnimage = local.fndata.image
   }
 
   provisioner "local-exec" {
     working_dir = local.fnroot
     command     = <<-EOC
-      fn deploy --verbose --app ${var.application_name}
+      fn build
+      fn push
     EOC
   }
 }
 
-locals {
-  fndata = {
-    name    = local.rawfndata.name
-    version = local.rawfndata.version
-    memory  = local.rawfndata.memory
-    image   = "${var.registry}/${local.rawfndata.name}:${local.rawfndata.version}"
-  }
-}
-
 resource "oci_functions_function" "function" {
-  depends_on     = [oci_database_autonomous_database.adb]
+  depends_on     = [oci_database_autonomous_database.adb, null_resource.deploy_function]
   application_id = oci_functions_application.application.id
   display_name   = local.fndata.name
   image          = local.fndata.image
@@ -131,14 +126,14 @@ resource "oci_functions_function" "function" {
 
 resource "oci_identity_dynamic_group" "dynamic_group" {
   compartment_id = var.root_compartment_id
-  description    = "enable function access to secrets"
+  description    = "enable function access to compartment"
   matching_rule  = "All {resource.type = 'fnfunc', resource.compartment.id = '${var.compartment_id}'}"
   name           = "${var.application_name}-${random_string.id.result}"
 }
 
 resource "oci_identity_policy" "policy" {
   compartment_id = var.root_compartment_id
-  description    = "enable function access to secrets"
+  description    = "enable function access to oci service"
   name           = "${var.application_name}-${random_string.id.result}"
   statements     = ["Allow dynamic-group ${oci_identity_dynamic_group.dynamic_group.name} to read secret-bundles in compartment id ${var.compartment_id}"]
 }
