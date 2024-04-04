@@ -55,7 +55,7 @@ resource "oci_functions_application" "test_application" {
 
 
 resource "null_resource" "deploy_function" {
-  depends_on = [oci_functions_application.application]
+  depends_on = [oci_functions_application.test_application]
   triggers = {
     fnimage = local.fndata.image
   }
@@ -68,6 +68,7 @@ resource "null_resource" "deploy_function" {
     EOC
   }
 }
+
 
 resource "oci_functions_function" "test_function" {
   depends_on     = [null_resource.deploy_function]
